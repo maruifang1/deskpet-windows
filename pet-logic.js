@@ -15,6 +15,9 @@
   const WINDOW_REMIND_COOLDOWN_MS = 15 * 60 * 1000;
   const WEATHER_REMIND_COOLDOWN_MS = 4 * 60 * 60 * 1000;
   const REMIND_INTERVAL_MS = 45 * 60 * 1000;
+  const DOCK_THRESHOLD = 24;
+  const DOCK_SLIVER = 110;
+  const DOCK_SIDE_SLIVER = 180;
 
   const FRAMES = {
     morning: "assets/frame.morning.png",
@@ -41,6 +44,8 @@
     walkE: "assets/frame.walkE.png",
     walkF: "assets/frame.walkF.png",
     reactDance: "assets/frame.reactDance.png",
+    dockLeft: "assets/frame.dockLeft.png",
+    dockRight: "assets/frame.dockRight.png",
   };
 
   const ANIMATION_ONLY_MOODS = new Set([
@@ -600,6 +605,26 @@
       "游戏开着全屏，看来是认真的。",
       "抓到你在偷偷打游戏，我也要看。",
     ],
+    wakeMorning: [
+      "早呀，睡得还好吗，我等你一晚上了。",
+      "早安，今天也从想我开始吧。",
+      "睡醒就看到我，是不是很赚。",
+      "早上好，今天也要好好吃饭。",
+      "醒了呀，我再陪你赖一会儿。",
+    ],
+    wakeGrumpy: [
+      "唔……这么早叫我。",
+      "再睡五分钟，就五分钟。",
+      "起床气发作中，暂时不理你。",
+      "醒了，但心情还在被窝里。",
+      "先别说话，让我缓一缓。",
+    ],
+    dock: [
+      "挂这儿歇会儿，需要我再说。",
+      "贴边休息，叫我一声就下来。",
+      "先挂着了，随时召唤我。",
+      "靠墙站一会儿，等你找我。",
+    ],
   };
 
   const WHISPER_FALLBACK = {
@@ -803,6 +828,15 @@
     return { x: Math.round(x), y: Math.round(y) };
   }
 
+  function classifyDockEdge(position, workArea, windowSize, threshold) {
+    const width = (windowSize && windowSize.width) || 260;
+    const height = (windowSize && windowSize.height) || 320;
+    if (position.x <= workArea.x + threshold) return "left";
+    if (position.x + width >= workArea.x + workArea.width - threshold) return "right";
+    if (position.y + height >= workArea.y + workArea.height - threshold) return "bottom";
+    return null;
+  }
+
   function effectiveMood(state, now) {
     if (angryActive(state, now)) return "reactAngry";
     if (reactionActive(state, now)) return state.reaction;
@@ -891,6 +925,11 @@
     };
   }
 
+  function pickWakeKey(random) {
+    const rng = random || Math.random;
+    return rng() < 0.5 ? "wakeMorning" : "wakeGrumpy";
+  }
+
   function classifyGesture({ moved, held, velocity, secondTap }) {
     if (moved) {
       return held < FLING_MAX_HOLD_MS && velocity > FLING_VELOCITY ? "fling" : "drag";
@@ -930,6 +969,9 @@
     WINDOW_REMIND_COOLDOWN_MS,
     WEATHER_REMIND_COOLDOWN_MS,
     REMIND_INTERVAL_MS,
+    DOCK_THRESHOLD,
+    DOCK_SLIVER,
+    DOCK_SIDE_SLIVER,
     SPECIAL_EVENTS,
     HOLIDAY_TABLE,
     moodFor,
@@ -948,6 +990,7 @@
     nameForEventKey,
     upcomingEventKey,
     pickCountdownLine,
+    pickWakeKey,
     classifyWindow,
     windowReminderDue,
     classifyWeather,
@@ -956,6 +999,7 @@
     reminderDue,
     classifyTapZone,
     pickWanderTarget,
+    classifyDockEdge,
     classifyGesture,
     comboStep,
     randomTapMood,

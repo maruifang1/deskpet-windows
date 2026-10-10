@@ -302,3 +302,15 @@ body[data-time="evening"] { --glow: drop-shadow(0 0 18px rgba(200, 170, 255, 0.1
 body[data-time="night"] { --glow: drop-shadow(0 0 18px rgba(160, 190, 255, 0.18)); }
 body[data-time="charging"] { --glow: drop-shadow(0 0 16px rgba(210, 230, 255, 0.18)); }
 body[data-time="lowBattery"] { --glow: drop-shadow(0 0 14px rgba(255, 120, 120, 0.18)); }
+
+body.dock-left #pet { transform: none; }
+body.dock-right #pet { transform: none; }
+body.dock-bottom #pet { transform: none; }
+
+body.dock-left #actions,
+body.dock-right #actions,
+body.dock-bottom #actions { display: none; }
+
+body.dock-left #bubble { left: 96px; }
+body.dock-right #bubble { left: 176px; }
+body.dock-bottom #bubble { top: auto; bottom: 130px; }

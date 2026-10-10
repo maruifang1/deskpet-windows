@@ -38,6 +38,7 @@ const state = {
   lastCountdown: null,
   lastTapOffset: { x: 0, y: 0 },
   workArea: null,
+  docked: null,
 };
 
 const WINDOW_POOL = {
@@ -75,6 +76,9 @@ let moveSamples = [];
 let flinging = false;
 let lastWinPos = { x: 0, y: 0 };
 let wanderTimer = null;
+let ttsAudio = null;
+let ttsPending = false;
+let ttsPendingTimer = null;
 
 function showBubble(text) {
   bubble.textContent = text;
@@ -125,7 +129,78 @@ function dailyLine(mood, now) {
 
 function ambientLine(poolKey, animMood) {
   showBubble(randomLine(poolKey));
+  speakBubble();
   playAnimation(animMood || "reactHappy");
+}
+
+function speakBubble() {
+  const text = bubble.textContent;
+  if (text) requestSpeech(text);
+}
+
+function requestSpeech(text) {
+  if (!window.deskpet || !window.deskpet.speakText) return;
+  if (!text || ttsPending || ttsAudio) return;
+  ttsPending = true;
+  clearTimeout(ttsPendingTimer);
+  ttsPendingTimer = setTimeout(() => {
+    ttsPending = false;
+  }, 10000);
+  window.deskpet.speakText(text);
+}
+
+function setupTts() {
+  if (!window.deskpet || !window.deskpet.onTtsAudio) return;
+  window.deskpet.onTtsAudio(({ audio }) => {
+    clearTimeout(ttsPendingTimer);
+    ttsPending = false;
+    if (!audio) return;
+    try {
+      const bytes = Uint8Array.from(atob(audio), (char) => char.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: "audio/mpeg" }));
+      const player = new Audio(url);
+      const guard = setTimeout(() => {
+        if (ttsAudio === player) ttsAudio = null;
+      }, 20000);
+      player.onended = () => {
+        clearTimeout(guard);
+        URL.revokeObjectURL(url);
+        if (ttsAudio === player) ttsAudio = null;
+      };
+      player.onerror = () => {
+        clearTimeout(guard);
+        URL.revokeObjectURL(url);
+        if (ttsAudio === player) ttsAudio = null;
+      };
+      ttsAudio = player;
+      player.play().catch(() => {
+        clearTimeout(guard);
+        URL.revokeObjectURL(url);
+        if (ttsAudio === player) ttsAudio = null;
+      });
+    } catch {}
+  });
+  window.deskpet.onTtsFailed(() => {
+    clearTimeout(ttsPendingTimer);
+    ttsPending = false;
+    showBubble("网络不好，今天先不念了。");
+  });
+  if (window.deskpet.onTtsSkipped) {
+    window.deskpet.onTtsSkipped(() => {
+      clearTimeout(ttsPendingTimer);
+      ttsPending = false;
+    });
+  }
+}
+
+function setupWake() {
+  if (!window.deskpet || !window.deskpet.onWakeUp) return;
+  window.deskpet.onWakeUp(() => {
+    const key = LOGIC.pickWakeKey(Math.random);
+    triggerReaction("reactHappy");
+    showBubble(randomLine(key));
+    speakBubble();
+  });
 }
 
 function clearPetAnimations() {
@@ -186,7 +261,12 @@ function triggerReaction(mood) {
 function render(now = new Date()) {
   document.body.dataset.time = LOGIC.baseMood(state, now);
   applyAmbientFx();
-  const mood = LOGIC.effectiveMood(state, now);
+  let mood = LOGIC.effectiveMood(state, now);
+  if (state.docked && (mood === "charging" || mood === "lowBattery")) {
+    mood = LOGIC.moodFor(now, false, 1);
+  }
+  if (state.docked === "left") mood = "dockLeft";
+  if (state.docked === "right") mood = "dockRight";
   if (mood !== currentMood) {
     const previous = currentMood;
     currentMood = mood;
@@ -221,6 +301,7 @@ function setupBattery() {
         if (wasCharging && !manager.charging && manager.level >= 0.99) {
           triggerReaction("reactDance");
           showBubble(specialLine("dance"));
+          speakBubble();
         }
         render(new Date());
       };
@@ -280,6 +361,10 @@ function setupWeather() {
 
 function applyAmbientFx() {
   if (!window.PetFx) return;
+  if (state.docked) {
+    window.PetFx.setAmbient(null);
+    return;
+  }
   const now = new Date();
   const weather = state.weather.category;
   if (weather === "rain" || weather === "storm") {
@@ -315,6 +400,7 @@ async function wanderOnce() {
     LOGIC.angryActive(state, now) ||
     flinging ||
     press ||
+    state.docked ||
     !bubble.classList.contains("hidden")
   ) {
     return;
@@ -333,6 +419,7 @@ async function wanderOnce() {
     height: state.workArea.windowHeight,
   });
   showBubble(randomLine("wander"));
+  speakBubble();
   let walkIndex = 0;
   let walkTimer = null;
   const startWalk = () => {
@@ -376,6 +463,30 @@ function restoreBaseFrame() {
   render(now);
 }
 
+function undockPet() {
+  if (!state.docked) return;
+  const edge = state.docked;
+  state.docked = null;
+  refreshWindowPosition().then(() => {
+    const from = { x: lastWinPos.x, y: lastWinPos.y };
+    let to = { x: from.x, y: from.y };
+    if (edge === "left") to = { x: from.x + 120, y: from.y };
+    if (edge === "right") to = { x: from.x - 120, y: from.y };
+    if (edge === "bottom") to = { x: from.x, y: from.y - 120 };
+    animateWindow(from, to, 420, () => {
+      setDockClass(null);
+      showBubble(specialLine("drop"));
+      speakBubble();
+      render(new Date());
+    });
+  });
+}
+
+function setDockClass(edge) {
+  document.body.classList.remove("dock-left", "dock-right", "dock-bottom");
+  if (edge) document.body.classList.add(`dock-${edge}`);
+}
+
 function wakeIfNeeded() {
   const now = new Date();
   const stage = LOGIC.lonelinessStage((now.getTime() - state.lastInteractionAt) / 60000);
@@ -383,6 +494,7 @@ function wakeIfNeeded() {
   if (stage && stage.minutes >= 20) {
     triggerReaction("reactHappy");
     showBubble(specialLine("wake"));
+    speakBubble();
     return true;
   }
   return false;
@@ -446,6 +558,7 @@ async function flingAway(origin) {
   animateWindow(from, to, 420, () => {
     triggerReaction("reactDizzy");
     showBubble(specialLine("fling"));
+    speakBubble();
     petImage.classList.add("pet-walk");
     let walkIndex = 0;
     const walkTimer = setInterval(() => {
@@ -463,6 +576,10 @@ async function flingAway(origin) {
 }
 
 function handleTap(now) {
+  if (state.docked) {
+    undockPet();
+    return;
+  }
   const isDouble = now - state.lastTapAt < LOGIC.DOUBLE_TAP_MS;
   state.lastTapAt = now;
   if (now - state.comboAt > LOGIC.COMBO_WINDOW_MS) state.comboCount = 0;
@@ -476,6 +593,7 @@ function handleTap(now) {
     }
     triggerReaction(step.mood);
     showBubble(specialLine(step.lineKey));
+    speakBubble();
     return;
   }
   if (isDouble) {
@@ -483,8 +601,10 @@ function handleTap(now) {
       LOGIC.clearAngry(state);
       triggerReaction("reactEmbarrassed");
       showBubble(specialLine("soothe"));
+      speakBubble();
     } else {
       triggerReaction("reactEmbarrassed");
+      speakBubble();
     }
     return;
   } else {
@@ -494,6 +614,7 @@ function handleTap(now) {
     const zonePool = { head: "tapHead", body: "tapBody", feet: "tapFeet" };
     triggerReaction(zoneMood[zone]);
     showBubble(randomLine(zonePool[zone]));
+    speakBubble();
   }
 }
 
@@ -532,7 +653,10 @@ function onPointerDown(event) {
   longTimer = setTimeout(() => {
     if (press && !press.moved && !longFired) {
       longFired = true;
-      if (!wakeIfNeeded()) triggerReaction("reactSleepy");
+      if (!wakeIfNeeded()) {
+        triggerReaction("reactSleepy");
+        speakBubble();
+      }
     }
   }, LOGIC.LONG_PRESS_MS);
 }
@@ -551,6 +675,7 @@ function onPointerMove(event) {
       dragFaceShown = true;
       triggerReaction("reactEmbarrassed");
       showBubble(specialLine("drag"));
+      speakBubble();
     }
   }
   if (press.moved && !moveRaf) {
@@ -586,12 +711,40 @@ async function onPointerUp(event) {
   if (flinging) return;
   if (moved) {
     wakeIfNeeded();
-    if (gesture === "fling") flingAway(dragOrigin);
-    else {
-      await refreshWindowPosition();
-      triggerReaction("reactHappy");
-      showBubble(specialLine("drop"));
+    if (gesture === "fling") {
+      state.docked = null;
+      setDockClass(null);
+      flingAway(dragOrigin);
+      return;
     }
+    await refreshWindowPosition();
+    state.docked = null;
+    if (!state.workArea && window.deskpet && window.deskpet.getWorkArea) {
+      try {
+        state.workArea = await window.deskpet.getWorkArea();
+      } catch {}
+    }
+    if (state.workArea && window.deskpet && window.deskpet.dockWindow) {
+      const edge = LOGIC.classifyDockEdge(
+        lastWinPos,
+        state.workArea,
+        { width: state.workArea.windowWidth, height: state.workArea.windowHeight },
+        LOGIC.DOCK_THRESHOLD
+      );
+      if (edge) {
+        state.docked = edge;
+        setDockClass(edge);
+        window.deskpet.dockWindow(edge);
+        render(new Date());
+        showBubble(randomLine("dock"));
+        speakBubble();
+        return;
+      }
+    }
+    setDockClass(null);
+    triggerReaction("reactHappy");
+    showBubble(specialLine("drop"));
+    speakBubble();
     return;
   }
   if (wakeIfNeeded()) return;
@@ -618,12 +771,18 @@ pet.addEventListener("pointercancel", onPointerCancel);
 
 document.querySelectorAll(".icon-btn").forEach((button) => {
   button.addEventListener("click", () => {
+    if (state.docked) {
+      undockPet();
+      return;
+    }
     const mood = button.dataset.reaction;
     if (wakeIfNeeded()) return;
     if (mood === "chat") {
       showBubble(randomLine("chat"));
+      speakBubble();
     } else {
       triggerReaction(mood);
+      speakBubble();
     }
   });
 });
@@ -656,6 +815,8 @@ document.body.addEventListener("click", (event) => {
 setupBattery();
 setupWindowAwareness();
 setupWeather();
+setupTts();
+setupWake();
 render(new Date());
 scheduleWander();
 
@@ -707,5 +868,6 @@ setInterval(() => {
   if (!active) return;
   state.lastReminderAt = now.getTime();
   showBubble(randomLine("remind"));
+  speakBubble();
   playAnimation("reactStretch");
 }, 60000);

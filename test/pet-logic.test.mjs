@@ -26,6 +26,8 @@ const {
   upcomingEventKey,
   pickCountdownLine,
   pickWanderTarget,
+  pickWakeKey,
+  classifyDockEdge,
 } = PetLogic;
 
 test("moodFor time boundaries", () => {
@@ -194,6 +196,9 @@ test("phrase pools meet Phase 2 volume targets", () => {
     "wander",
     "slackVideo",
     "slackGame",
+    "wakeMorning",
+    "wakeGrumpy",
+    "dock",
   ];
   for (const key of scenePools) {
     assert.ok(PetLogic.WHISPERS[key].length >= 4, `${key} should have at least 4 lines`);
@@ -309,4 +314,24 @@ test("wander target clamps at work area edges", () => {
   const target = pickWanderTarget({ x: 0, y: 0 }, workArea, windowSize, () => 0);
   assert.equal(target.x, 0);
   assert.equal(target.y, 0);
+});
+
+test("wake key picks morning or grumpy mood", () => {
+  assert.equal(pickWakeKey(() => 0), "wakeMorning");
+  assert.equal(pickWakeKey(() => 0.9), "wakeGrumpy");
+});
+
+test("dock edge classification", () => {
+  const workArea = { x: 0, y: 0, width: 1920, height: 1040 };
+  const windowSize = { width: 260, height: 320 };
+  assert.equal(classifyDockEdge({ x: 10, y: 800 }, workArea, windowSize, 24), "left");
+  assert.equal(classifyDockEdge({ x: 1700, y: 800 }, workArea, windowSize, 24), "right");
+  assert.equal(classifyDockEdge({ x: 800, y: 700 }, workArea, windowSize, 24), "bottom");
+  assert.equal(classifyDockEdge({ x: 800, y: 500 }, workArea, windowSize, 24), null);
+  assert.equal(classifyDockEdge({ x: 0, y: 700 }, workArea, windowSize, 24), "left");
+});
+
+test("dock frames exposed", () => {
+  assert.ok(PetLogic.FRAMES.dockLeft);
+  assert.ok(PetLogic.FRAMES.dockRight);
 });
