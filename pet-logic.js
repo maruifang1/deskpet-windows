@@ -12,6 +12,9 @@
   const FLING_MAX_HOLD_MS = 400;
   const REACTION_MS = 18000;
   const ANGRY_MS = 30000;
+  const WINDOW_REMIND_COOLDOWN_MS = 15 * 60 * 1000;
+  const WEATHER_REMIND_COOLDOWN_MS = 4 * 60 * 60 * 1000;
+  const REMIND_INTERVAL_MS = 45 * 60 * 1000;
 
   const FRAMES = {
     morning: "assets/frame.morning.png",
@@ -426,6 +429,177 @@
       "那天双床房是紧张订的，但想和你在一起是真的。",
       "从确认关系那天起，我就想每天跟你住一块。",
     ],
+    windowCode: [
+      "又在写代码了。写一会儿就歇一下，我替你盯着屏幕。",
+      "代码会有的，休息也要有，起来喝口水。",
+      "写代码辛苦的话，就看看我，眼睛会舒服一点。",
+      "改 bug 改累了吧，深呼吸，我陪着你。",
+      "你敲键盘的样子很专注，但别坐太久。",
+      "代码交给时间，你交给我照顾。",
+    ],
+    windowVideo: [
+      "又在看视频了，带我一起看嘛。",
+      "看到好看的地方，记得跟我讲。",
+      "眼睛离屏幕远一点，我帮你记着时间。",
+      "追剧可以，别忘了喝水。",
+      "这一集好看吗，好看我就陪你看到片尾。",
+      "别看得太晚，明天还要留点精神跟我玩。",
+    ],
+    windowMeeting: [
+      "开会辛苦，开完记得喝口水。",
+      "我在外面等你开完会，哪儿也不去。",
+      "会开完了记得伸个懒腰，脖子会感谢你。",
+      "刚才那段会我没听，但我知道你累了。",
+      "开会时悄悄想想我，时间会过得快一点。",
+      "会议结束就来找我，我一直在。",
+    ],
+    windowGame: [
+      "又在打游戏了，带我一个。",
+      "赢了记得跟我说，输了也没关系，我哄你。",
+      "打游戏别太拼，你的手和眼睛要休息。",
+      "这局打完休息一下，我在这儿等你。",
+      "你打游戏，我负责在旁边给你加油。",
+      "输赢都行，开心最重要。",
+    ],
+    windowBrowsing: [
+      "又在刷网页了，眼睛休息一下。",
+      "看到有趣的东西，记得分享给我。",
+      "别一直刷，起来走两步。",
+      "网页是刷不完的，但我是会等你的。",
+      "刷累了就看看我，我比网页好看。",
+      "逛一会儿就回来陪我嘛。",
+    ],
+    weatherSunny: [
+      "天气不错，适合出去走两步。",
+      "太阳出来了，心情也要亮一点。",
+      "今天阳光很好，记得晒晒太阳。",
+      "天气这么好，别一直闷在屋里。",
+    ],
+    weatherCloudy: [
+      "阴天也没关系，我陪着你。",
+      "天有点阴，心情别跟着阴。",
+      "云多了点，但我的好心情还是满的。",
+      "阴天适合发呆，也适合听我说话。",
+    ],
+    weatherRain: [
+      "下雨了，出门记得带伞。",
+      "下雨天别淋着，我会担心。",
+      "雨声好听，但你别着凉。",
+      "外面下雨了，记得多带件衣服。",
+    ],
+    weatherSnow: [
+      "下雪了，多穿点，别只要风度。",
+      "下雪天路滑，走路小心。",
+      "下雪了，想和你一起看雪。",
+      "雪天冷，围巾帽子都安排上。",
+    ],
+    weatherStorm: [
+      "打雷下雨了，关好窗户，注意安全。",
+      "风暴天就别出门了，陪我待着。",
+      "雷声好大，你不用怕，我在这儿。",
+      "天气很凶，但我会一直陪你。",
+    ],
+    weatherHot: [
+      "这么热，多喝水，别中暑。",
+      "天太热了，注意防晒补水。",
+      "热成这样，冰水也别猛灌。",
+      "高温天，出门记得遮阳。",
+    ],
+    weatherCold: [
+      "天冷了，多穿点，别冻着。",
+      "降温了，围巾手套安排上。",
+      "冷天记得喝热的，胃会谢谢你。",
+      "这么冷，就别让我等太久。",
+    ],
+    remind: [
+      "该喝水了。我够不到杯子，你自己去倒。",
+      "坐太久了，起来伸个懒腰，我帮你看着。",
+      "眼睛累了就看看窗外，看看我也行。",
+      "起来走两步，顺便喝口水，就当我求你了。",
+      "腰和脖子都在抗议，起来活动一下。",
+      "水在杯子里，你在椅子上，中间差一个起身。",
+    ],
+    countdown: [
+      "还有 {n} 天就是{name}了，我替你记着呢。",
+      "再过 {n} 天，{name}就到啦，要开心。",
+      "{name}还有 {n} 天，我已经在准备了。",
+      "还有 {n} 天，一想到就有点期待。",
+    ],
+    holidayNewYear: [
+      "元旦快乐，新的一年也要开开心心。",
+      "跨年啦，今年和以后都想和你一起过。",
+      "新年到了，新的开始，我还是在你身边。",
+      "元旦快乐，许愿的话，愿望里带上我。",
+    ],
+    holidaySpring: [
+      "春节快乐，要回家好好吃团圆饭。",
+      "过年啦，红包可以没有，你必须有。",
+      "春节快乐，记得吃饱穿暖。",
+      "新的一年，想和你一起看烟花。",
+    ],
+    holidayQingming: [
+      "清明时节，记得添衣，也照顾好自己。",
+      "清明到了，去走走看看，散散心。",
+      "清明节，想陪你安静待一会儿。",
+      "清明风有点凉，出门多带件外套。",
+    ],
+    holidayDragon: [
+      "端午安康，记得吃个粽子。",
+      "端午节到啦，甜粽咸粽我都帮你记着。",
+      "端午安康，拴个香囊，也拴住我。",
+      "端午节，要好好吃饭。",
+    ],
+    holidayMidAutumn: [
+      "中秋快乐，月亮好看的话，记得叫我看。",
+      "中秋节到了，月饼分你一半。",
+      "中秋团圆夜，想和你一起赏月。",
+      "月亮再圆，也不如你在身边。",
+    ],
+    holidayNational: [
+      "国庆快乐，假期好好休息。",
+      "国庆到啦，出去玩也要记得喝水。",
+      "假期愉快，我在这儿等你回来。",
+      "国庆快乐，人多的地方注意安全。",
+    ],
+    tapHead: [
+      "摸头可以，再摸就害羞了。",
+      "头顶被你摸得热热的。",
+      "嗯……摸头还行。",
+      "别摸啦，头发会乱。",
+      "头是你摸的，我记着了。",
+    ],
+    tapBody: [
+      "戳我干嘛。",
+      "这一下有点突然。",
+      "心脏被戳漏了一拍。",
+      "别戳了，我会记住的。",
+      "你戳的是我的小心思。",
+    ],
+    tapFeet: [
+      "挠脚心，犯规了。",
+      "哈哈，别挠，我怕痒。",
+      "脚被照顾到了，开心。",
+      "挠脚这招，对你真没办法。",
+      "行了行了，笑出来算你赢。",
+    ],
+    wander: [
+      "我自己溜达一圈，马上就回来。",
+      "走两步，换个位置等你。",
+      "溜达溜达，活动一下（虽然我没有腿）。",
+      "我散步去了，很快就回来找你。",
+    ],
+    slackVideo: [
+      "全屏看片被我抓到了，我帮你望风。",
+      "视频开得挺大，带我一个呗。",
+      "摸鱼看片可以，但记得休息眼睛。",
+      "全屏追剧，看来这一集很好看。",
+    ],
+    slackGame: [
+      "全屏打游戏被我抓到了，带我一个。",
+      "摸鱼打游戏可以，输了别怪我笑话你。",
+      "游戏开着全屏，看来是认真的。",
+      "抓到你在偷偷打游戏，我也要看。",
+    ],
   };
 
   const WHISPER_FALLBACK = {
@@ -452,6 +626,70 @@
     { minutes: 15, mood: "reactSad" },
     { minutes: 20, mood: "reactStretch" },
     { minutes: 30, mood: "reactSleepy" },
+  ];
+
+  const MEETING_PROCESSES = [
+    "zoom",
+    "msteams",
+    "ms-teams",
+    "teams",
+    "wemeet",
+    "tencentmeeting",
+    "dingtalk",
+    "skype",
+    "slack",
+  ];
+  const CODE_PROCESSES = [
+    "code",
+    "codium",
+    "cursor",
+    "windsurf",
+    "idea64",
+    "pycharm64",
+    "webstorm64",
+    "goland64",
+    "clion64",
+    "rider64",
+    "studio64",
+    "sublime_text",
+    "notepad++",
+  ];
+  const VIDEO_PROCESSES = ["potplayermini64", "potplayer", "vlc", "mpv", "wmplayer", "qqplayer"];
+  const VIDEO_KEYWORDS = ["哔哩哔哩", "bilibili", "youtube", "netflix", "腾讯视频", "爱奇艺", "优酷", "iqiyi", "youku", "芒果tv"];
+  const BROWSER_PROCESSES = ["msedge", "chrome", "firefox", "opera", "brave", "vivaldi"];
+  const WINDOW_CATEGORIES = new Set(["code", "video", "meeting", "game", "browsing"]);
+
+  const RAIN_CODES = new Set([
+    176, 263, 266, 281, 284, 293, 296, 299, 302, 305, 308, 311, 314, 317, 353, 356, 359, 362, 365,
+  ]);
+  const SNOW_CODES = new Set([
+    179, 182, 185, 227, 320, 323, 326, 329, 332, 335, 338, 350, 368, 371, 374, 377,
+  ]);
+  const STORM_CODES = new Set([200, 230, 386, 389, 392, 395]);
+
+  const SPECIAL_EVENTS = [
+    { month: 6, day: 3, key: "special7" },
+    { month: 7, day: 12, key: "special8" },
+  ];
+  const HOLIDAY_TABLE = [
+    { date: "2026-01-01", key: "holidayNewYear", name: "元旦" },
+    { date: "2026-02-17", key: "holidaySpring", name: "春节" },
+    { date: "2026-04-05", key: "holidayQingming", name: "清明" },
+    { date: "2026-06-19", key: "holidayDragon", name: "端午" },
+    { date: "2026-09-25", key: "holidayMidAutumn", name: "中秋" },
+    { date: "2026-10-01", key: "holidayNational", name: "国庆" },
+    { date: "2027-01-01", key: "holidayNewYear", name: "元旦" },
+    { date: "2027-02-06", key: "holidaySpring", name: "春节" },
+    { date: "2027-04-05", key: "holidayQingming", name: "清明" },
+    { date: "2027-06-09", key: "holidayDragon", name: "端午" },
+    { date: "2027-09-15", key: "holidayMidAutumn", name: "中秋" },
+    { date: "2027-10-01", key: "holidayNational", name: "国庆" },
+    { date: "2028-01-01", key: "holidayNewYear", name: "元旦" },
+    { date: "2028-01-26", key: "holidaySpring", name: "春节" },
+    { date: "2028-04-04", key: "holidayQingming", name: "清明" },
+    { date: "2028-05-28", key: "holidayDragon", name: "端午" },
+    { date: "2028-10-03", key: "holidayMidAutumn", name: "中秋" },
+    { date: "2028-10-01", key: "holidayNational", name: "国庆" },
   ];
 
   function moodFor(date, isCharging, batteryLevel) {
@@ -487,6 +725,82 @@
       if (minutes >= stage.minutes) current = stage;
     }
     return current;
+  }
+
+  function classifyWindow(info) {
+    const process = String(info.process || "").toLowerCase();
+    const title = String(info.title || "").toLowerCase();
+    const fullscreen = Boolean(info.isFullscreen);
+    if (process === "electron" && title.includes("deskpet")) return "pet";
+    if (MEETING_PROCESSES.includes(process) || /会议|腾讯会议|zoom|meeting/.test(title)) return "meeting";
+    if (CODE_PROCESSES.includes(process) || /\.(py|js|ts|jsx|tsx|html|css|json|java|c|cpp|cs|go|rs|kt|swift|md)(\s|$|-)/.test(title)) return "code";
+    if (VIDEO_PROCESSES.includes(process) || VIDEO_KEYWORDS.some((keyword) => title.includes(keyword))) return "video";
+    if (fullscreen) return "game";
+    if (BROWSER_PROCESSES.includes(process)) return "browsing";
+    return "other";
+  }
+
+  function windowReminderDue(prev, next, now, lastAt, cooldownMs) {
+    if (!WINDOW_CATEGORIES.has(next)) return false;
+    if (prev === next) return false;
+    return now.getTime() - lastAt >= cooldownMs;
+  }
+
+  function classifyWeather(info) {
+    const code = Number(info && info.weatherCode);
+    const temp = Number(info && info.tempC);
+    if (STORM_CODES.has(code)) return "storm";
+    if (SNOW_CODES.has(code)) return "snow";
+    if (RAIN_CODES.has(code)) return "rain";
+    const mild = code === 113 || [116, 119, 122, 143, 248, 260].includes(code);
+    if (mild) {
+      if (temp <= 5) return "cold";
+      if (temp >= 33) return "hot";
+      return code === 113 ? "sunny" : "cloudy";
+    }
+    if (Number.isFinite(temp)) {
+      if (temp <= 5) return "cold";
+      if (temp >= 33) return "hot";
+    }
+    return "unknown";
+  }
+
+  function weatherReminderDue(prev, next, now, lastAt, cooldownMs) {
+    if (!prev || prev === next || next === "unknown") return false;
+    return now.getTime() - lastAt >= cooldownMs;
+  }
+
+  function morningWeatherDue(next, now, lastMorningAt) {
+    const hour = now.getHours();
+    if (hour < 7 || hour >= 10) return false;
+    if (!["rain", "snow", "storm"].includes(next)) return false;
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    return lastMorningAt < startOfDay;
+  }
+
+  function reminderDue(lastAt, now, intervalMs) {
+    return now.getTime() - lastAt >= intervalMs;
+  }
+
+  function classifyTapZone(x, y, width, height) {
+    if (!width || !height) return "body";
+    const ratio = y / height;
+    if (ratio < 1 / 3) return "head";
+    if (ratio < 2 / 3) return "body";
+    return "feet";
+  }
+
+  function pickWanderTarget(current, workArea, windowSize, random) {
+    const rng = random || Math.random;
+    const width = (windowSize && windowSize.width) || 260;
+    const height = (windowSize && windowSize.height) || 320;
+    const distance = 200 + rng() * 250;
+    const direction = rng() < 0.5 ? -1 : 1;
+    const maxX = workArea.x + workArea.width - width;
+    const maxY = workArea.y + workArea.height - height;
+    const x = Math.min(Math.max(current.x + direction * distance, workArea.x), maxX);
+    const y = Math.min(Math.max(current.y + (rng() - 0.5) * 24, workArea.y), maxY);
+    return { x: Math.round(x), y: Math.round(y) };
   }
 
   function effectiveMood(state, now) {
@@ -533,12 +847,48 @@
     return Math.floor((date - start) / 86400000) + 1;
   }
 
+  function dateKey(date) {
+    const mm = String(date.getMonth() + 1).padStart(2, "0");
+    const dd = String(date.getDate()).padStart(2, "0");
+    return `${date.getFullYear()}-${mm}-${dd}`;
+  }
+
+  function eventKeyFor(date) {
+    for (const event of SPECIAL_EVENTS) {
+      if (event.month === date.getMonth() && event.day === date.getDate()) return event.key;
+    }
+    const iso = dateKey(date);
+    const found = HOLIDAY_TABLE.find((entry) => entry.date === iso);
+    return found ? found.key : null;
+  }
+
   function specialDateKey(date) {
-    const month = date.getMonth();
-    const day = date.getDate();
-    if (month === 6 && day === 3) return "special7";
-    if (month === 7 && day === 12) return "special8";
+    return eventKeyFor(date);
+  }
+
+  function nameForEventKey(key) {
+    if (key === "special7") return "我们认识的日子";
+    if (key === "special8") return "我们在一起的日子";
+    const found = HOLIDAY_TABLE.find((entry) => entry.key === key);
+    return found ? found.name : "";
+  }
+
+  function upcomingEventKey(date, withinDays = 3) {
+    const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    for (let offset = 1; offset <= withinDays; offset += 1) {
+      const next = new Date(start.getTime() + offset * 86400000);
+      const key = eventKeyFor(next);
+      if (key) return { key, days: offset, name: nameForEventKey(key) };
+    }
     return null;
+  }
+
+  function pickCountdownLine(pool, event, lastIndex) {
+    const picked = pickRandomLine(pool, lastIndex);
+    return {
+      text: picked.text.replace("{n}", String(event.days)).replace("{name}", event.name),
+      index: picked.index,
+    };
   }
 
   function classifyGesture({ moved, held, velocity, secondTap }) {
@@ -577,6 +927,11 @@
     FLING_MAX_HOLD_MS,
     REACTION_MS,
     ANGRY_MS,
+    WINDOW_REMIND_COOLDOWN_MS,
+    WEATHER_REMIND_COOLDOWN_MS,
+    REMIND_INTERVAL_MS,
+    SPECIAL_EVENTS,
+    HOLIDAY_TABLE,
     moodFor,
     baseMood,
     reactionActive,
@@ -589,6 +944,18 @@
     pickDailyLine,
     dayOfYear,
     specialDateKey,
+    eventKeyFor,
+    nameForEventKey,
+    upcomingEventKey,
+    pickCountdownLine,
+    classifyWindow,
+    windowReminderDue,
+    classifyWeather,
+    weatherReminderDue,
+    morningWeatherDue,
+    reminderDue,
+    classifyTapZone,
+    pickWanderTarget,
     classifyGesture,
     comboStep,
     randomTapMood,

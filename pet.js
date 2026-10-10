@@ -28,6 +28,40 @@ const state = {
   dailyDay: null,
   lastDaily: {},
   lastRandom: {},
+  windowCategory: null,
+  lastWindowAt: 0,
+  weather: { category: null, weatherCode: null, tempC: null },
+  lastWeatherAt: 0,
+  lastMorningWeatherAt: 0,
+  lastReminderAt: Date.now(),
+  countdownDay: null,
+  lastCountdown: null,
+  lastTapOffset: { x: 0, y: 0 },
+  workArea: null,
+};
+
+const WINDOW_POOL = {
+  code: "windowCode",
+  video: "windowVideo",
+  meeting: "windowMeeting",
+  game: "windowGame",
+  browsing: "windowBrowsing",
+};
+const WINDOW_MOOD = {
+  code: "reactHappy",
+  video: "reactHappy",
+  meeting: "reactSurprised",
+  game: "reactDance",
+  browsing: "reactHappy",
+};
+const WEATHER_POOL = {
+  sunny: "weatherSunny",
+  cloudy: "weatherCloudy",
+  rain: "weatherRain",
+  snow: "weatherSnow",
+  storm: "weatherStorm",
+  hot: "weatherHot",
+  cold: "weatherCold",
 };
 
 let currentMood = null;
@@ -40,6 +74,7 @@ let moveRaf = 0;
 let moveSamples = [];
 let flinging = false;
 let lastWinPos = { x: 0, y: 0 };
+let wanderTimer = null;
 
 function showBubble(text) {
   bubble.textContent = text;
@@ -71,6 +106,13 @@ function dailyLine(mood, now) {
     state.lastRandom[special] = result.index;
     return result.text;
   }
+  const upcoming = LOGIC.upcomingEventKey(now, 3);
+  if (upcoming && state.countdownDay !== LOGIC.dayOfYear(now)) {
+    state.countdownDay = LOGIC.dayOfYear(now);
+    const result = LOGIC.pickCountdownLine(LOGIC.WHISPERS.countdown, upcoming, state.lastCountdown);
+    state.lastCountdown = result.index;
+    return result.text;
+  }
   const seed = LOGIC.dayOfYear(now);
   if (seed !== state.dailyDay) {
     state.dailyDay = seed;
@@ -79,6 +121,11 @@ function dailyLine(mood, now) {
   const result = LOGIC.pickDailyLine(LOGIC.poolFor(mood), seed, state.lastDaily[mood]);
   state.lastDaily[mood] = result.index;
   return result.text;
+}
+
+function ambientLine(poolKey, animMood) {
+  showBubble(randomLine(poolKey));
+  playAnimation(animMood || "reactHappy");
 }
 
 function clearPetAnimations() {
@@ -131,9 +178,14 @@ function triggerReaction(mood) {
   playAnimation(mood);
   render(new Date());
   showBubble(randomLine(mood));
+  if (window.PetFx && (mood === "reactHappy" || mood === "reactDance")) {
+    window.PetFx.burst("hearts");
+  }
 }
 
 function render(now = new Date()) {
+  document.body.dataset.time = LOGIC.baseMood(state, now);
+  applyAmbientFx();
   const mood = LOGIC.effectiveMood(state, now);
   if (mood !== currentMood) {
     const previous = currentMood;
@@ -177,6 +229,151 @@ function setupBattery() {
       update();
     })
     .catch(() => {});
+}
+
+function setupWindowAwareness() {
+  if (!window.deskpet || !window.deskpet.onForegroundWindow) return;
+  window.deskpet.onForegroundWindow((info) => {
+    const now = new Date();
+    if (LOGIC.reactionActive(state, now) || LOGIC.angryActive(state, now) || flinging) return;
+    const next = LOGIC.classifyWindow(info);
+    const due = LOGIC.windowReminderDue(
+      state.windowCategory,
+      next,
+      now,
+      state.lastWindowAt,
+      LOGIC.WINDOW_REMIND_COOLDOWN_MS
+    );
+    state.windowCategory = next;
+    if (due) {
+      state.lastWindowAt = now.getTime();
+      if (next === "game") {
+        ambientLine("slackGame", "reactDance");
+      } else if (next === "video" && info.isFullscreen) {
+        ambientLine("slackVideo", "reactDance");
+      } else if (WINDOW_POOL[next]) {
+        ambientLine(WINDOW_POOL[next], WINDOW_MOOD[next]);
+      }
+    }
+  });
+}
+
+function setupWeather() {
+  if (!window.deskpet || !window.deskpet.onWeather) return;
+  window.deskpet.onWeather((info) => {
+    const now = new Date();
+    const next = LOGIC.classifyWeather(info);
+    const prev = state.weather.category;
+    state.weather = { category: next, weatherCode: info.weatherCode, tempC: info.tempC };
+    applyAmbientFx();
+    if (!WEATHER_POOL[next]) return;
+    const changed =
+      prev &&
+      prev !== next &&
+      LOGIC.weatherReminderDue(prev, next, now, state.lastWeatherAt, LOGIC.WEATHER_REMIND_COOLDOWN_MS);
+    const morning = LOGIC.morningWeatherDue(next, now, state.lastMorningWeatherAt);
+    if (changed) state.lastWeatherAt = now.getTime();
+    if (morning) state.lastMorningWeatherAt = now.getTime();
+    if (changed || morning) ambientLine(WEATHER_POOL[next]);
+  });
+}
+
+function applyAmbientFx() {
+  if (!window.PetFx) return;
+  const now = new Date();
+  const weather = state.weather.category;
+  if (weather === "rain" || weather === "storm") {
+    window.PetFx.setAmbient("rain");
+    return;
+  }
+  if (weather === "snow") {
+    window.PetFx.setAmbient("snow");
+    return;
+  }
+  const hour = now.getHours();
+  if (hour >= 23 || hour < 6) {
+    window.PetFx.setAmbient("stars");
+    return;
+  }
+  window.PetFx.setAmbient(null);
+}
+
+function scheduleWander() {
+  const delay = 12 * 60 * 1000 + Math.random() * 8 * 60 * 1000;
+  clearTimeout(wanderTimer);
+  wanderTimer = setTimeout(async () => {
+    wanderTimer = null;
+    await wanderOnce();
+    scheduleWander();
+  }, delay);
+}
+
+async function wanderOnce() {
+  const now = new Date();
+  if (
+    LOGIC.reactionActive(state, now) ||
+    LOGIC.angryActive(state, now) ||
+    flinging ||
+    press ||
+    !bubble.classList.contains("hidden")
+  ) {
+    return;
+  }
+  if (!window.deskpet || !window.deskpet.getWorkArea) return;
+  if (!state.workArea) {
+    try {
+      state.workArea = await window.deskpet.getWorkArea();
+    } catch {}
+  }
+  if (!state.workArea) return;
+  await refreshWindowPosition();
+  const current = { x: lastWinPos.x, y: lastWinPos.y };
+  const target = LOGIC.pickWanderTarget(current, state.workArea, {
+    width: state.workArea.windowWidth,
+    height: state.workArea.windowHeight,
+  });
+  showBubble(randomLine("wander"));
+  let walkIndex = 0;
+  let walkTimer = null;
+  const startWalk = () => {
+    petImage.classList.add("pet-walk");
+    walkTimer = setInterval(() => {
+      walkIndex = (walkIndex + 1) % WALK_FRAMES.length;
+      petImage.src = LOGIC.FRAMES[WALK_FRAMES[walkIndex]];
+    }, 160);
+  };
+  const stopWalk = () => {
+    clearInterval(walkTimer);
+    petImage.classList.remove("pet-walk");
+  };
+  startWalk();
+  await new Promise((resolve) => animateWindow(current, target, 850, resolve));
+  if (press || flinging) {
+    stopWalk();
+    restoreBaseFrame();
+    return;
+  }
+  stopWalk();
+  const standingFrame = LOGIC.FRAMES[LOGIC.effectiveMood(state, new Date())];
+  if (standingFrame) petImage.src = standingFrame;
+  await new Promise((resolve) => setTimeout(resolve, 2500 + Math.random() * 2000));
+  if (press || flinging) {
+    restoreBaseFrame();
+    return;
+  }
+  startWalk();
+  await new Promise((resolve) => animateWindow(target, current, 850, resolve));
+  stopWalk();
+  restoreBaseFrame();
+}
+
+function restoreBaseFrame() {
+  const now = new Date();
+  const mood = LOGIC.effectiveMood(state, now);
+  currentMood = mood;
+  const frame = LOGIC.FRAMES[mood];
+  if (frame) petImage.src = frame;
+  render(now);
 }
 
 function wakeIfNeeded() {
@@ -291,7 +488,12 @@ function handleTap(now) {
     }
     return;
   } else {
-    triggerReaction(LOGIC.randomTapMood(Math.random()));
+    const rect = pet.getBoundingClientRect();
+    const zone = LOGIC.classifyTapZone(state.lastTapOffset.x, state.lastTapOffset.y, rect.width, rect.height);
+    const zoneMood = { head: "reactEmbarrassed", body: "reactSurprised", feet: "reactHappy" };
+    const zonePool = { head: "tapHead", body: "tapBody", feet: "tapFeet" };
+    triggerReaction(zoneMood[zone]);
+    showBubble(randomLine(zonePool[zone]));
   }
 }
 
@@ -306,6 +508,8 @@ function onPointerDown(event) {
     startY: event.screenY,
     winX: lastWinPos.x,
     winY: lastWinPos.y,
+    offsetX: event.offsetX,
+    offsetY: event.offsetY,
     moved: false,
     at: Date.now(),
   };
@@ -375,6 +579,7 @@ async function onPointerUp(event) {
   releasePointer(event);
   activePointerId = null;
   clearTimeout(longTimer);
+  state.lastTapOffset = { x: press.offsetX, y: press.offsetY };
   const dragOrigin = press ? { x: press.winX, y: press.winY } : { x: lastWinPos.x, y: lastWinPos.y };
   press = null;
   pet.classList.remove("grabbing");
@@ -449,7 +654,10 @@ document.body.addEventListener("click", (event) => {
 });
 
 setupBattery();
+setupWindowAwareness();
+setupWeather();
 render(new Date());
+scheduleWander();
 
 setInterval(() => render(new Date()), 30000);
 setInterval(() => {
@@ -491,3 +699,13 @@ setInterval(() => {
   walkIndex = (walkIndex + 1) % WALK_FRAMES.length;
   petImage.src = LOGIC.FRAMES[WALK_FRAMES[walkIndex]];
 }, 160);
+setInterval(() => {
+  const now = new Date();
+  if (LOGIC.reactionActive(state, now) || LOGIC.angryActive(state, now) || flinging) return;
+  if (!LOGIC.reminderDue(state.lastReminderAt, now, LOGIC.REMIND_INTERVAL_MS)) return;
+  const active = state.windowCategory && state.windowCategory !== "pet" && state.windowCategory !== "other";
+  if (!active) return;
+  state.lastReminderAt = now.getTime();
+  showBubble(randomLine("remind"));
+  playAnimation("reactStretch");
+}, 60000);

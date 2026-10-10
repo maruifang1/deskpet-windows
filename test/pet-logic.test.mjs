@@ -15,6 +15,17 @@ const {
   clearAngry,
   randomTapMood,
   poolFor,
+  classifyWindow,
+  windowReminderDue,
+  classifyWeather,
+  weatherReminderDue,
+  morningWeatherDue,
+  reminderDue,
+  classifyTapZone,
+  eventKeyFor,
+  upcomingEventKey,
+  pickCountdownLine,
+  pickWanderTarget,
 } = PetLogic;
 
 test("moodFor time boundaries", () => {
@@ -156,6 +167,37 @@ test("phrase pools meet Phase 2 volume targets", () => {
   assert.ok(PetLogic.WHISPERS.lonely10.length >= 8);
   assert.ok(PetLogic.WHISPERS.special7.length >= 4);
   assert.ok(PetLogic.WHISPERS.special8.length >= 4);
+  const scenePools = [
+    "windowCode",
+    "windowVideo",
+    "windowMeeting",
+    "windowGame",
+    "windowBrowsing",
+    "weatherSunny",
+    "weatherCloudy",
+    "weatherRain",
+    "weatherSnow",
+    "weatherStorm",
+    "weatherHot",
+    "weatherCold",
+    "remind",
+    "countdown",
+    "holidayNewYear",
+    "holidaySpring",
+    "holidayQingming",
+    "holidayDragon",
+    "holidayMidAutumn",
+    "holidayNational",
+    "tapHead",
+    "tapBody",
+    "tapFeet",
+    "wander",
+    "slackVideo",
+    "slackGame",
+  ];
+  for (const key of scenePools) {
+    assert.ok(PetLogic.WHISPERS[key].length >= 4, `${key} should have at least 4 lines`);
+  }
 });
 
 test("poolFor prefers dedicated pools over fallbacks", () => {
@@ -170,4 +212,101 @@ test("walk frame set exposes the walking frames", () => {
     assert.ok(PetLogic.FRAMES[mood], `${mood} should have a frame`);
     assert.ok(PetLogic.ANIMATION_ONLY_MOODS.has(mood), `${mood} should be animation-only`);
   }
+});
+
+test("window classification", () => {
+  assert.equal(classifyWindow({ process: "Code", title: "app.py - Visual Studio Code", isFullscreen: false }), "code");
+  assert.equal(classifyWindow({ process: "WeMeet", title: "腾讯会议", isFullscreen: false }), "meeting");
+  assert.equal(classifyWindow({ process: "msedge", title: "哔哩哔哩 - 视频", isFullscreen: false }), "video");
+  assert.equal(classifyWindow({ process: "chrome", title: "Game", isFullscreen: true }), "game");
+  assert.equal(classifyWindow({ process: "msedge", title: "news", isFullscreen: false }), "browsing");
+  assert.equal(classifyWindow({ process: "electron", title: "DeskPet", isFullscreen: false }), "pet");
+  assert.equal(classifyWindow({ process: "explorer", title: "Documents", isFullscreen: false }), "other");
+});
+
+test("window reminder respects cooldown and category", () => {
+  const now = new Date(2026, 0, 1, 8, 0);
+  const cooldown = 15 * 60 * 1000;
+  assert.equal(windowReminderDue("code", "video", now, now.getTime() - cooldown, cooldown), true);
+  assert.equal(windowReminderDue("code", "video", now, now.getTime() - cooldown + 1, cooldown), false);
+  assert.equal(windowReminderDue("video", "video", now, 0, cooldown), false);
+  assert.equal(windowReminderDue("code", "other", now, 0, cooldown), false);
+});
+
+test("weather classification", () => {
+  assert.equal(classifyWeather({ weatherCode: 113, tempC: 22 }), "sunny");
+  assert.equal(classifyWeather({ weatherCode: 296, tempC: 22 }), "rain");
+  assert.equal(classifyWeather({ weatherCode: 200, tempC: 25 }), "storm");
+  assert.equal(classifyWeather({ weatherCode: 395, tempC: 0 }), "storm");
+  assert.equal(classifyWeather({ weatherCode: 326, tempC: 0 }), "snow");
+  assert.equal(classifyWeather({ weatherCode: 113, tempC: 34 }), "hot");
+  assert.equal(classifyWeather({ weatherCode: 116, tempC: 2 }), "cold");
+  assert.equal(classifyWeather({ weatherCode: 999, tempC: 20 }), "unknown");
+});
+
+test("weather reminder and morning reminder", () => {
+  const now = new Date(2026, 0, 1, 8, 0);
+  const cooldown = 4 * 60 * 60 * 1000;
+  assert.equal(weatherReminderDue("sunny", "rain", now, now.getTime() - cooldown, cooldown), true);
+  assert.equal(weatherReminderDue("rain", "rain", now, 0, cooldown), false);
+  assert.equal(weatherReminderDue("sunny", "unknown", now, 0, cooldown), false);
+  const yesterday = now.getTime() - 24 * 60 * 60 * 1000;
+  assert.equal(morningWeatherDue("rain", now, yesterday), true);
+  assert.equal(morningWeatherDue("rain", new Date(2026, 0, 1, 11, 0), yesterday), false);
+  assert.equal(morningWeatherDue("sunny", now, yesterday), false);
+});
+
+test("reminder due boundary", () => {
+  const now = new Date(2026, 0, 1, 8, 0);
+  const interval = 45 * 60 * 1000;
+  assert.equal(reminderDue(now.getTime() - interval, now, interval), true);
+  assert.equal(reminderDue(now.getTime() - interval + 1, now, interval), false);
+});
+
+test("tap zones", () => {
+  assert.equal(classifyTapZone(10, 0, 300, 300), "head");
+  assert.equal(classifyTapZone(10, 99, 300, 300), "head");
+  assert.equal(classifyTapZone(10, 100, 300, 300), "body");
+  assert.equal(classifyTapZone(10, 199, 300, 300), "body");
+  assert.equal(classifyTapZone(10, 200, 300, 300), "feet");
+  assert.equal(classifyTapZone(10, 20, 0, 0), "body");
+});
+
+test("holiday table and countdown", () => {
+  assert.equal(eventKeyFor(new Date(2026, 0, 1)), "holidayNewYear");
+  assert.equal(eventKeyFor(new Date(2026, 1, 17)), "holidaySpring");
+  assert.equal(eventKeyFor(new Date(2028, 4, 28)), "holidayDragon");
+  assert.equal(eventKeyFor(new Date(2026, 6, 3)), "special7");
+  const upcoming = upcomingEventKey(new Date(2026, 1, 15), 3);
+  assert.ok(upcoming);
+  assert.equal(upcoming.key, "holidaySpring");
+  assert.equal(upcoming.days, 2);
+  assert.equal(upcoming.name, "春节");
+  const midAutumn = upcomingEventKey(new Date(2026, 8, 23), 3);
+  assert.equal(midAutumn.key, "holidayMidAutumn");
+  assert.equal(midAutumn.days, 2);
+  assert.equal(upcomingEventKey(new Date(2026, 5, 1), 3), null);
+});
+
+test("countdown line interpolation", () => {
+  const pool = ["还有 {n} 天就是{name}了。"];
+  const result = pickCountdownLine(pool, { days: 2, name: "春节" }, null);
+  assert.equal(result.text, "还有 2 天就是春节了。");
+});
+
+test("wander target stays inside work area", () => {
+  const workArea = { x: 0, y: 0, width: 1920, height: 1040 };
+  const windowSize = { width: 260, height: 320 };
+  const target = pickWanderTarget({ x: 800, y: 800 }, workArea, windowSize, () => 0);
+  assert.ok(target.x >= workArea.x && target.x + windowSize.width <= workArea.x + workArea.width);
+  assert.ok(target.y >= workArea.y && target.y + windowSize.height <= workArea.y + workArea.height);
+  assert.ok(Math.abs(target.x - 800) >= 200 && Math.abs(target.x - 800) <= 450);
+});
+
+test("wander target clamps at work area edges", () => {
+  const workArea = { x: 0, y: 0, width: 1920, height: 1040 };
+  const windowSize = { width: 260, height: 320 };
+  const target = pickWanderTarget({ x: 0, y: 0 }, workArea, windowSize, () => 0);
+  assert.equal(target.x, 0);
+  assert.equal(target.y, 0);
 });
