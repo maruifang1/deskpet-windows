@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>DeskPet</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="bubble" class="hidden"></div>
+  <div id="soap" class="hidden" aria-hidden="true"></div>
+  <div id="pet">
+    <img id="pet-image" alt="桌宠">
+  </div>
+  <div id="actions" class="no-drag">
+    <button id="btn-chat" class="icon-btn" title="聊天" data-reaction="chat" aria-label="聊天">💬</button>
+    <button id="btn-happy" class="icon-btn" title="开心" data-reaction="reactHappy" aria-label="开心">♥</button>
+    <button id="btn-surprised" class="icon-btn" title="惊讶" data-reaction="reactSurprised" aria-label="惊讶">!</button>
+    <button id="btn-sleepy" class="icon-btn" title="困了" data-reaction="reactSleepy" aria-label="困了">☾</button>
+  </div>
+  <div id="menu" class="hidden no-drag">
+    <button id="menu-quit">退出桌宠</button>
+  </div>
+  <script src="pet-logic.js"></script>
+  <script src="pet.js"></script>
+</body>
+</html>

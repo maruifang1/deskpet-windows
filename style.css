@@ -1,0 +1,250 @@
+:root {
+  --panel: rgba(18, 18, 20, 0.86);
+  --line: rgba(198, 203, 208, 0.55);
+  --text: #dfe2e5;
+  --accent: #c3c8cd;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+}
+
+body {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+#pet {
+  position: absolute;
+  inset: 6px 6px 42px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: grab;
+}
+
+#pet.grabbing {
+  cursor: grabbing;
+}
+
+#pet-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  animation: breathe 4.5s ease-in-out infinite;
+  transition: filter 0.2s ease;
+}
+
+#pet:hover #pet-image {
+  filter: brightness(1.08);
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+#pet-image.pet-jump {
+  animation: pet-jump 0.65s ease;
+}
+
+@keyframes pet-jump {
+  0% { transform: translateY(0) scale(1); }
+  30% { transform: translateY(-18px) scale(1.04); }
+  60% { transform: translateY(0) scale(0.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+#pet-image.pet-shake {
+  animation: pet-shake 0.5s ease;
+}
+
+@keyframes pet-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-7px) rotate(-3deg); }
+  75% { transform: translateX(7px) rotate(3deg); }
+}
+
+#bubble {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 192px;
+  padding: 8px 10px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.25s ease;
+  z-index: 3;
+}
+
+#bubble.hidden {
+  opacity: 0;
+}
+
+#bubble {
+  pointer-events: none;
+}
+
+#soap {
+  position: absolute;
+  right: 22px;
+  bottom: 96px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(220, 226, 232, 0.7);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.35), rgba(180, 190, 200, 0.12) 60%, transparent 70%);
+  box-shadow: 0 0 8px rgba(200, 210, 220, 0.25);
+  animation: soap-float 2.6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#soap.hidden {
+  display: none;
+}
+
+@keyframes soap-float {
+  0% { transform: translate(0, 0) scale(0.7); opacity: 0; }
+  25% { opacity: 1; }
+  100% { transform: translate(10px, -46px) scale(1.05); opacity: 0; }
+}
+#actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  z-index: 2;
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--accent);
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.08);
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+#menu {
+  position: absolute;
+  right: 8px;
+  bottom: 46px;
+  z-index: 5;
+}
+
+#menu button {
+  padding: 7px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#menu button:hover {
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+/* --- Gesture & idle animations --- */
+#pet-image.pet-look-left { animation: pet-look-left 2.6s ease-in-out 2; }
+#pet-image.pet-look-right { animation: pet-look-right 2.6s ease-in-out 2; }
+#pet-image.pet-walk { animation: pet-walk 0.64s ease-in-out infinite; }
+#pet-image.pet-sway { animation: pet-sway 0.7s ease-in-out 3; }
+#pet-image.pet-dance { animation: pet-dance 0.9s ease-in-out 3; }
+#pet-image.pet-embarrassed { animation: pet-embarrassed 0.85s ease-in-out; }
+#pet-image.pet-blink {
+  animation: pet-blink 0.15s ease-in-out;
+  transform-origin: 50% 32%;
+}
+
+#pet.grabbing #pet-image { animation: pet-dragged 0.8s ease-in-out infinite; }
+
+@keyframes pet-look-left {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  30% { transform: translateX(-12px) rotate(-4deg); }
+  60% { transform: translateX(0); }
+}
+@keyframes pet-look-right {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  30% { transform: translateX(12px) rotate(4deg); }
+  60% { transform: translateX(0); }
+}
+@keyframes pet-walk {
+  0%, 100% { transform: translateY(0) rotate(0) scaleY(1); }
+  25% { transform: translateY(-6px) rotate(-4deg) scaleY(1.03); }
+  50% { transform: translateY(2px) rotate(0) scaleY(0.95); }
+  75% { transform: translateY(-4px) rotate(4deg) scaleY(1.01); }
+}
+@keyframes pet-sway {
+  0%, 100% { transform: rotate(0) translateX(0); }
+  25% { transform: rotate(-8deg) translateX(-4px); }
+  75% { transform: rotate(8deg) translateX(4px); }
+}
+@keyframes pet-dance {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  20% { transform: translateY(-14px) rotate(-6deg); }
+  40% { transform: translateY(-4px) rotate(5deg); }
+  60% { transform: translateY(-14px) rotate(6deg); }
+  80% { transform: translateY(-4px) rotate(-5deg); }
+}
+@keyframes pet-dragged {
+  0%, 100% { transform: scale(0.97) rotate(-2deg); }
+  50% { transform: scale(1.04) rotate(2deg); }
+}
+@keyframes pet-embarrassed {
+  0%, 100% { transform: translateY(0) scaleY(1) rotate(0); }
+  25% { transform: translateY(5px) scaleY(0.96) rotate(-3deg); }
+  55% { transform: translateY(-3px) scaleY(1.01) rotate(2deg); }
+  80% { transform: translateY(2px) scaleY(0.98); }
+}
+@keyframes pet-blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.94); }
+}

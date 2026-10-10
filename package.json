@@ -1,0 +1,13 @@
+{
+  "name": "deskpet-windows",
+  "version": "1.0.0",
+  "description": "Windows 悬浮桌宠（黑银 Q 版）",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/*.test.mjs\""
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}
