@@ -4,7 +4,17 @@ const bubble = document.getElementById("bubble");
 const soap = document.getElementById("soap");
 const menu = document.getElementById("menu");
 const LOGIC = window.PetLogic;
-const WALK_FRAMES = ["walkA", "walkC", "walkB", "walkD"];
+const WALK_FRAMES = ["walkA", "walkB", "walkC", "walkD", "walkE", "walkF"];
+const BUBBLE_MOODS = {
+  reactHappy: "bubble-happy",
+  reactSurprised: "bubble-surprised",
+  reactSleepy: "bubble-sleepy",
+  reactDizzy: "bubble-dizzy",
+  reactAngry: "bubble-angry",
+  reactEmbarrassed: "bubble-embarrassed",
+  reactStretch: "bubble-stretch",
+  reactSad: "bubble-sad",
+};
 
 const state = {
   battery: { isCharging: false, level: -1 },
@@ -34,6 +44,9 @@ let lastWinPos = { x: 0, y: 0 };
 function showBubble(text) {
   bubble.textContent = text;
   bubble.classList.remove("hidden");
+  for (const cls of Object.values(BUBBLE_MOODS)) bubble.classList.remove(cls);
+  const variant = BUBBLE_MOODS[currentMood];
+  if (variant) bubble.classList.add(variant);
   clearTimeout(showBubble._timer);
   showBubble._timer = setTimeout(() => bubble.classList.add("hidden"), 4200);
 }
@@ -52,6 +65,12 @@ function specialLine(key) {
 }
 
 function dailyLine(mood, now) {
+  const special = LOGIC.specialDateKey(now);
+  if (special) {
+    const result = LOGIC.pickRandomLine(LOGIC.WHISPERS[special], state.lastRandom[special]);
+    state.lastRandom[special] = result.index;
+    return result.text;
+  }
   const seed = LOGIC.dayOfYear(now);
   if (seed !== state.dailyDay) {
     state.dailyDay = seed;

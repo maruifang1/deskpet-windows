@@ -29,6 +29,8 @@ FRAMES = [
     "walkB",
     "walkC",
     "walkD",
+    "walkE",
+    "walkF",
     "reactDance",
 ]
 

@@ -105,6 +105,21 @@ body {
   pointer-events: none;
 }
 
+#bubble.bubble-happy { border-color: rgba(214, 220, 226, 0.8); }
+#bubble.bubble-surprised { border-color: rgba(190, 205, 220, 0.75); }
+#bubble.bubble-sleepy { border-color: rgba(150, 158, 170, 0.5); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3); }
+#bubble.bubble-dizzy { border-color: rgba(205, 200, 180, 0.7); }
+#bubble.bubble-angry {
+  border-color: rgba(232, 92, 92, 0.85);
+  box-shadow: 0 4px 14px rgba(232, 92, 92, 0.18);
+}
+#bubble.bubble-embarrassed {
+  border-color: rgba(244, 154, 180, 0.75);
+  box-shadow: 0 4px 14px rgba(244, 154, 180, 0.16);
+}
+#bubble.bubble-stretch { border-color: rgba(205, 214, 222, 0.65); }
+#bubble.bubble-sad { border-color: rgba(140, 160, 205, 0.7); }
+
 #soap {
   position: absolute;
   right: 22px;
@@ -195,7 +210,7 @@ body {
 /* --- Gesture & idle animations --- */
 #pet-image.pet-look-left { animation: pet-look-left 2.6s ease-in-out 2; }
 #pet-image.pet-look-right { animation: pet-look-right 2.6s ease-in-out 2; }
-#pet-image.pet-walk { animation: pet-walk 0.64s ease-in-out infinite; }
+#pet-image.pet-walk { animation: pet-walk 0.96s ease-in-out infinite; }
 #pet-image.pet-sway { animation: pet-sway 0.7s ease-in-out 3; }
 #pet-image.pet-dance { animation: pet-dance 0.9s ease-in-out 3; }
 #pet-image.pet-embarrassed { animation: pet-embarrassed 0.85s ease-in-out; }
@@ -218,9 +233,11 @@ body {
 }
 @keyframes pet-walk {
   0%, 100% { transform: translateY(0) rotate(0) scaleY(1); }
-  25% { transform: translateY(-6px) rotate(-4deg) scaleY(1.03); }
-  50% { transform: translateY(2px) rotate(0) scaleY(0.95); }
-  75% { transform: translateY(-4px) rotate(4deg) scaleY(1.01); }
+  16.66% { transform: translateY(-6px) rotate(-4deg) scaleY(1.03); }
+  33.33% { transform: translateY(2px) rotate(0) scaleY(0.96); }
+  50% { transform: translateY(-6px) rotate(4deg) scaleY(1.03); }
+  66.66% { transform: translateY(2px) rotate(0) scaleY(0.96); }
+  83.33% { transform: translateY(-4px) rotate(-3deg) scaleY(1.01); }
 }
 @keyframes pet-sway {
   0%, 100% { transform: rotate(0) translateX(0); }

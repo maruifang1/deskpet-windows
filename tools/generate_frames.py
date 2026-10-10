@@ -1,8 +1,9 @@
-"""Generate the 12 new pet expression frames with the Qwen Image edit tool.
+"""Generate the 8 non-walk pet expression frames with the Qwen Image edit tool.
 
 Each frame starts from the same green-screen morning raw so the character,
 clothing, and palette stay consistent. Outputs land in tools/raw and are
-keyed out by prepare_frames.py afterwards.
+keyed out by prepare_frames.py afterwards. The six walking frames are split
+from tools/raw/walk-sheet.png by split_walk_sheet.py instead.
 """
 
 import os
@@ -53,26 +54,6 @@ FRAMES = [
         "idleLookRight",
         "以图1的人物为原型，保持人物形象、服装、配色与画风完全一致；改成向右张望：头部微微向右转，眼睛看向右前方，表情平淡好奇；" + COMMON,
         3018,
-    ),
-    (
-        "walkA",
-        "以图1的人物为原型，保持人物形象、服装、配色与画风完全一致；改成走路姿势A：右腿向前迈出，左腿在后，双臂自然摆动，身体微微前倾，表情平淡；" + COMMON,
-        3019,
-    ),
-    (
-        "walkB",
-        "以图1的人物为原型，保持人物形象、服装、配色与画风完全一致；改成走路姿势B：左腿向前迈出，右腿在后，双臂自然摆动，身体微微前倾，表情平淡；" + COMMON,
-        3020,
-    ),
-    (
-        "walkC",
-        "以图1的人物为原型，保持人物形象、服装、配色与画风完全一致；改成走路姿势C：右腿在前支撑，左腿屈膝抬起离地，双臂自然摆动，身体微微前倾，表情平淡；" + COMMON,
-        3022,
-    ),
-    (
-        "walkD",
-        "以图1的人物为原型，保持人物形象、服装、配色与画风完全一致；改成走路姿势D：左腿在前支撑，右腿屈膝抬起离地，双臂自然摆动，身体微微前倾，表情平淡；" + COMMON,
-        3023,
     ),
     (
         "reactDance",

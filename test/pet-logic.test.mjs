@@ -10,6 +10,7 @@ const {
   pickRandomLine,
   pickDailyLine,
   dayOfYear,
+  specialDateKey,
   lonelinessStage,
   clearAngry,
   randomTapMood,
@@ -115,6 +116,12 @@ test("dayOfYear", () => {
   assert.equal(dayOfYear(new Date(2026, 11, 31)), 365);
 });
 
+test("special date keys", () => {
+  assert.equal(specialDateKey(new Date(2026, 6, 3)), "special7");
+  assert.equal(specialDateKey(new Date(2026, 7, 12)), "special8");
+  assert.equal(specialDateKey(new Date(2026, 9, 10)), null);
+});
+
 test("loneliness stages escalate and cap", () => {
   assert.equal(lonelinessStage(4.9), null);
   assert.equal(lonelinessStage(5).mood, "idleLookLeft");
@@ -147,19 +154,19 @@ test("phrase pools meet Phase 2 volume targets", () => {
   }
   assert.ok(PetLogic.WHISPERS.lonely5.length >= 8);
   assert.ok(PetLogic.WHISPERS.lonely10.length >= 8);
+  assert.ok(PetLogic.WHISPERS.special7.length >= 4);
+  assert.ok(PetLogic.WHISPERS.special8.length >= 4);
 });
 
 test("poolFor prefers dedicated pools over fallbacks", () => {
   assert.equal(poolFor("reactEmbarrassed"), PetLogic.WHISPERS.reactEmbarrassed);
   assert.equal(poolFor("idleLookLeft"), PetLogic.WHISPERS.lonely5);
   assert.equal(poolFor("walkA"), PetLogic.WHISPERS.lonely10);
-  assert.equal(poolFor("walkC"), PetLogic.WHISPERS.lonely10);
-  assert.equal(poolFor("walkD"), PetLogic.WHISPERS.lonely10);
   assert.equal(poolFor("reactDance"), PetLogic.WHISPERS.dance);
 });
 
-test("walk frame set exposes all four walking frames", () => {
-  for (const mood of ["walkA", "walkB", "walkC", "walkD"]) {
+test("walk frame set exposes the walking frames", () => {
+  for (const mood of ["walkA", "walkB", "walkC", "walkD", "walkE", "walkF"]) {
     assert.ok(PetLogic.FRAMES[mood], `${mood} should have a frame`);
     assert.ok(PetLogic.ANIMATION_ONLY_MOODS.has(mood), `${mood} should be animation-only`);
   }

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DeskPet 走路演示</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(90, 100, 112, 0.45), transparent 55%),
+        #101215;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      overflow: hidden;
+      color: #dfe2e5;
+    }
+    .stage {
+      width: 300px;
+      height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(198, 203, 208, 0.18);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+    #pet-image {
+      width: 250px;
+      height: 300px;
+      object-fit: contain;
+      animation: breathe 4.5s ease-in-out infinite, pet-walk 0.96s ease-in-out infinite;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+    #pet-image.paused { animation-play-state: paused; }
+    #pet-image.fast { animation-duration: 0.96s, 0.48s; }
+    .badge {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(18, 18, 20, 0.86);
+      border: 1px solid rgba(198, 203, 208, 0.5);
+      font-size: 14px;
+      color: #fff;
+    }
+    .controls {
+      margin-top: 18px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .controls button {
+      min-width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(198, 203, 208, 0.45);
+      background: rgba(18, 18, 20, 0.86);
+      color: #dfe2e5;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .controls button:hover { border-color: #fff; color: #fff; }
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.015); }
+    }
+    @keyframes pet-walk {
+      0%, 100% { transform: translateY(0) rotate(0) scaleY(1); }
+      16.66% { transform: translateY(-6px) rotate(-4deg) scaleY(1.03); }
+      33.33% { transform: translateY(2px) rotate(0) scaleY(0.96); }
+      50% { transform: translateY(-6px) rotate(4deg) scaleY(1.03); }
+      66.66% { transform: translateY(2px) rotate(0) scaleY(0.96); }
+      83.33% { transform: translateY(-4px) rotate(-3deg) scaleY(1.01); }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <img id="pet-image" alt="桌宠走路演示">
+    <div class="badge" id="badge">A</div>
+  </div>
+  <div class="controls">
+    <button id="toggle" aria-label="播放暂停">⏸</button>
+    <button id="speed" aria-label="倍速">1x</button>
+  </div>
+  <script>
+    const frames = [
+      { name: "A", src: "assets/frame.walkA.png" },
+      { name: "B", src: "assets/frame.walkB.png" },
+      { name: "C", src: "assets/frame.walkC.png" },
+      { name: "D", src: "assets/frame.walkD.png" },
+      { name: "E", src: "assets/frame.walkE.png" },
+      { name: "F", src: "assets/frame.walkF.png" },
+    ];
+    const img = document.getElementById("pet-image");
+    const badge = document.getElementById("badge");
+    const toggle = document.getElementById("toggle");
+    const speed = document.getElementById("speed");
+    let index = 0;
+    let interval = null;
+    let paused = false;
+    let multiplier = 1;
+
+    function play() {
+      clearInterval(interval);
+      interval = setInterval(() => {
+        index = (index + 1) % frames.length;
+        img.src = frames[index].src;
+        badge.textContent = frames[index].name;
+      }, 160 / multiplier);
+    }
+
+    toggle.addEventListener("click", () => {
+      paused = !paused;
+      img.classList.toggle("paused", paused);
+      toggle.textContent = paused ? "▶" : "⏸";
+    });
+
+    speed.addEventListener("click", () => {
+      multiplier = multiplier === 1 ? 2 : 1;
+      speed.textContent = multiplier === 1 ? "1x" : "2x";
+      img.classList.toggle("fast", multiplier === 2);
+      if (!paused) play();
+    });
+
+    img.src = frames[0].src;
+    play();
+  </script>
+</body>
+</html>
